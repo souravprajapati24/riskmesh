@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: casemanagement-service
+
+server:
+  port: 8083
+
+management:
+  server:
+    port: 8093
+  endpoints:
+    web:
+      exposure:
+        include: health,info

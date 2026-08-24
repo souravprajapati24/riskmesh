@@ -1,0 +1,11 @@
+target/
+*.class
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.DS_Store
+.env
+application-local.yml
+*-secrets.yaml
