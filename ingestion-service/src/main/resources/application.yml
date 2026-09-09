@@ -1,6 +1,14 @@
 spring:
   application:
     name: ingestion-service
+  datasource:
+    url: jdbc:postgresql://localhost:5436/ingestion_db
+    username: riskmesh
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
 
 server:
   port: 8081
