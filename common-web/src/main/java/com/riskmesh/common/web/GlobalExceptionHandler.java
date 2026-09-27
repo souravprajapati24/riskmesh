@@ -1,10 +1,13 @@
 package com.riskmesh.common.web;
 
 import java.net.URI;
+import java.util.List;
+
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -20,6 +23,20 @@ public class GlobalExceptionHandler {
         problemDetail.setProperty("traceId", MDC.get("traceId"));
         return problemDetail;
     }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleBeanValidation(MethodArgumentNotValidException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problemDetail.setType(URI.create("https://riskmesh.dev/errors/validation-error"));
+        problemDetail.setTitle("VALIDATION_ERROR");
+        List<String> violations = ex.getBindingResult().getFieldErrors().stream()
+                .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
+                .toList();
+        problemDetail.setProperty("details", violations);
+        problemDetail.setProperty("traceId", MDC.get("traceId"));
+        return problemDetail;
+    }
+
 
     @ExceptionHandler(InvalidSignatureException.class)
     public ProblemDetail handleInvalidSignature(InvalidSignatureException ex) {
