@@ -2,8 +2,8 @@ spring:
   application:
     name: ingestion-service
   datasource:
-    url: jdbc:postgresql://localhost:5436/ingestion_db
-    username: riskmesh
+    url: ${INGESTION_DB_URL}
+    username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   flyway:
@@ -26,10 +26,10 @@ riskmesh:
     hmac:
       shared-secret: ${HMAC_SHARED_SECRET}
     rate-limit:
-      window-seconds: 60
-      per-merchant-limit: 1000
-      global-limit: 50000
-      ip-violation-threshold: 100
+      window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
+      per-merchant-limit: ${RATE_LIMIT_PER_MERCHANT:1000}
+      global-limit: ${RATE_LIMIT_GLOBAL:50000}
+      ip-violation-threshold: ${IP_VIOLATION_THRESHOLD:100}
 
 
 server:
