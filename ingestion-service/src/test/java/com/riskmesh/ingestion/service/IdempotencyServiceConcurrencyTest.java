@@ -22,11 +22,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-/**
- * Verifies AC-02's concurrency guarantee at the IdempotencyService layer: N simultaneous
- * identical submissions must reserve exactly one winning transactionId, with PostgreSQL - not
- * Redis - as the arbiter (RiskMesh_TRD.md §4.5).
- */
+
 @Testcontainers
 @SpringBootTest
 class IdempotencyServiceConcurrencyTest {
@@ -60,8 +56,6 @@ class IdempotencyServiceConcurrencyTest {
 
     @Test
     void concurrentReservation_onlyOneWins() throws InterruptedException {
-        // Flyway (autoconfigured against the Testcontainers Postgres) already created
-        // deduplication_records - just confirm we start from a clean slate for this key.
         String idempotencyKey = "concurrency-test-key-" + UUID.randomUUID();
         int concurrentCallers = 10;
 

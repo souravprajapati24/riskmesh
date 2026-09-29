@@ -31,11 +31,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-/**
- * Verifies that {@code SELECT ... FOR UPDATE SKIP LOCKED} allows two concurrently-running outbox
- * pollers (simulating two pod replicas) to claim disjoint batches without double-publishing the
- * same row (RiskMesh_TRD.md §8.6).
- */
+
 @Testcontainers
 @SpringBootTest
 class OutboxPublisherConcurrencyTest {
