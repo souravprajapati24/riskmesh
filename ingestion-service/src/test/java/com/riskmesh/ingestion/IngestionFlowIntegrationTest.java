@@ -26,12 +26,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-/**
- * End-to-end integration test of the full ingestion pipeline: HMAC verification, rate limiting,
- * idempotency, persistence, and outbox writes - via a real embedded HTTP server and real
- * Testcontainers Postgres/Redis (RiskMesh_PRD.md §17.2's integration test requirement). Matches
- * the Phase 3 exit criteria in RiskMesh_Master_Implementation_Plan.md.
- */
+
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class IngestionFlowIntegrationTest {
@@ -55,9 +50,6 @@ class IngestionFlowIntegrationTest {
         registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
         registry.add("spring.data.redis.password", () -> "");
         registry.add("riskmesh.security.hmac.shared-secret", () -> SHARED_SECRET);
-        // Kafka is not started in this test; OutboxPublisher's scheduled trigger is inert in
-        // Phase 3 (see IngestionServiceApplication's Javadoc), so no bootstrap-servers override
-        // is needed for the pipeline under test to complete successfully.
     }
 
     @LocalServerPort
