@@ -17,16 +17,17 @@ import org.springframework.stereotype.Component;
 public class RedisRateLimiter {
 
     private static final Logger log = LoggerFactory.getLogger(RedisRateLimiter.class);
-    @Value("${riskmesh.security.rate-limit.window-seconds}")
-    private String WINDOW_SECONDS;
+
+    private final int windowSeconds;
 
     private final StringRedisTemplate redisTemplate;
     private final RiskMeshSecurityProperties properties;
     private final DefaultRedisScript<List> script;
 
-    public RedisRateLimiter(StringRedisTemplate redisTemplate, RiskMeshSecurityProperties properties) {
+    public RedisRateLimiter(StringRedisTemplate redisTemplate, RiskMeshSecurityProperties properties, @Value("${riskmesh.security.rate-limit.window-seconds}") int windowSeconds) {
         this.redisTemplate = redisTemplate;
         this.properties = properties;
+        this.windowSeconds = windowSeconds;
         this.script = new DefaultRedisScript<>();
         this.script.setLocation(new ClassPathResource("/lua/rate_limit.lua"));
         this.script.setResultType(List.class);
@@ -43,7 +44,7 @@ public class RedisRateLimiter {
     @SuppressWarnings("unchecked")
     private RateLimitResult check(String key, int limit) {
         try {
-            List<Long> result = redisTemplate.execute(script, List.of(key), String.valueOf(limit), WINDOW_SECONDS);
+            List<Long> result = redisTemplate.execute(script, List.of(key), String.valueOf(limit), String.valueOf(windowSeconds));
             boolean allowed = result.get(0) == 1L;
             long retryAfter = result.get(1);
             return new RateLimitResult(allowed, retryAfter);
