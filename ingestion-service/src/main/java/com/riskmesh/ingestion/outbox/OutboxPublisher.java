@@ -48,7 +48,7 @@ public class OutboxPublisher {
             } catch (Exception e) {
                 log.warn("Failed to publish outbox event id={} topic={}; leaving unpublished for retry",
                         event.id(), event.topic(), e);
-                ingestionDlqRepository.insert(event.aggregateId(), event.payload(),
+                ingestionDlqRepository.recordFailure(event.aggregateId(), event.payload(),
                         "Kafka publish failed: " + e.getMessage(), Instant.now(clock));
             }
         }

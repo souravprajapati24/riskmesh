@@ -12,6 +12,8 @@ import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 public class IdempotencyService {
@@ -53,14 +55,33 @@ public class IdempotencyService {
         UUID winningTransactionId = (UUID) row.get("transaction_id");
         boolean wasNewlyInserted = (boolean) row.get("inserted");
 
-        try {
-            redisTemplate.opsForValue().set(CACHE_KEY_PREFIX + idempotencyKey, winningTransactionId.toString(), REDIS_TTL);
-        } catch (RedisConnectionFailureException e) {
-            log.warn("Redis unavailable for idempotency cache write-through; PostgreSQL row is still authoritative", e);
+        String cacheKey = CACHE_KEY_PREFIX + idempotencyKey;
+        String cacheValue = winningTransactionId.toString();
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            cacheWrite(cacheKey, cacheValue);
+                        }
+                    });
+        } else {
+            cacheWrite(cacheKey, cacheValue);
         }
 
         return wasNewlyInserted
                 ? IdempotencyResult.reserved(winningTransactionId)
                 : IdempotencyResult.duplicate(winningTransactionId);
+    }
+
+    private void cacheWrite(String key, String value) {
+        try {
+            redisTemplate.opsForValue().set(key, value, REDIS_TTL);
+        } catch (RedisConnectionFailureException e) {
+            log.warn(
+                    "Redis unavailable for idempotency cache write-through; PostgreSQL row is still authoritative",
+                    e);
+        }
     }
 }
