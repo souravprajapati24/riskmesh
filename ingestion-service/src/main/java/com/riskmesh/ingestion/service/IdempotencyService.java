@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.repository.query.QueryCreationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -39,7 +40,7 @@ public class IdempotencyService {
             if (cached != null) {
                 return IdempotencyResult.duplicate(UUID.fromString(cached));
             }
-        } catch (RedisConnectionFailureException e) {
+        } catch (RedisConnectionFailureException | QueryCreationException e) {
             log.warn("Redis unavailable for idempotency cache read; falling through to PostgreSQL", e);
         }
 
@@ -78,7 +79,7 @@ public class IdempotencyService {
     private void cacheWrite(String key, String value) {
         try {
             redisTemplate.opsForValue().set(key, value, REDIS_TTL);
-        } catch (RedisConnectionFailureException e) {
+        } catch (RedisConnectionFailureException | QueryCreationException e) {
             log.warn(
                     "Redis unavailable for idempotency cache write-through; PostgreSQL row is still authoritative",
                     e);

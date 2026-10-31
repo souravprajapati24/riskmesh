@@ -1,0 +1,3 @@
+riskmesh:
+  kafka:
+    enabled: false

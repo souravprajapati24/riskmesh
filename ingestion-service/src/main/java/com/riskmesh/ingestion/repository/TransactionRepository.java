@@ -2,6 +2,7 @@ package com.riskmesh.ingestion.repository;
 
 import com.riskmesh.ingestion.domain.Transaction;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,5 +40,14 @@ public class TransactionRepository {
                 (rs, rowNum) -> rs.getString("status"),
                 transactionId);
         return results.stream().findFirst();
+    }
+
+    /** Updates {@code transactions.status} (must be one of the CHECK-constrained values). */
+    public int updateStatus(UUID transactionId, String status, Instant now) {
+        return jdbcTemplate.update("""
+                UPDATE transactions
+                SET status = ?, updated_at = ?, version = version + 1
+                WHERE transaction_id = ?
+                """, status, Timestamp.from(now), transactionId);
     }
 }
