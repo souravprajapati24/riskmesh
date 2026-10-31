@@ -10,6 +10,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.repository.query.QueryCreationException;
 import org.springframework.stereotype.Component;
 
 
@@ -48,7 +49,7 @@ public class RedisRateLimiter {
             boolean allowed = result.get(0) == 1L;
             long retryAfter = result.get(1);
             return new RateLimitResult(allowed, retryAfter);
-        } catch (RedisConnectionFailureException e) {
+        } catch (RedisConnectionFailureException | QueryCreationException e) {
             log.warn("Redis unavailable for rate limiting on key {}; failing open", key, e);
             return new RateLimitResult(true,-1);
         }

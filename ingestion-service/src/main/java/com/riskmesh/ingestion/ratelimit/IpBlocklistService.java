@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.repository.query.QueryCreationException;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -32,7 +33,7 @@ public class IpBlocklistService {
                 return false;
             }
             return unblockAtEpochSeconds > Instant.now().getEpochSecond();
-        } catch (RedisConnectionFailureException e) {
+        } catch (RedisConnectionFailureException | QueryCreationException e) {
             log.warn("Redis unavailable for IP blocklist check on {}; failing open", ip, e);
             return false;
         }
@@ -47,7 +48,7 @@ public class IpBlocklistService {
                 long unblockAt = Instant.now().plus(BLOCK_DURATION).getEpochSecond();
                 redisTemplate.opsForZSet().add(BLOCKLIST_KEY, ip, unblockAt);
             }
-        } catch (RedisConnectionFailureException e) {
+        } catch (RedisConnectionFailureException | QueryCreationException e) {
             log.warn("Redis unavailable for IP violation tracking on {}; skipping", ip, e);
         }
     }

@@ -6,7 +6,13 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import org.apache.kafka.common.errors.InvalidTopicException;
+import org.apache.kafka.common.errors.RecordTooLargeException;
+import org.apache.kafka.common.errors.SerializationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -44,13 +50,40 @@ public class OutboxPublisher {
             try {
                 kafkaTemplate.send(event.topic(), event.eventKey(), event.payload())
                         .get(SEND_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-                outboxEventRepository.markPublished(event.id(), Instant.now(clock));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                recordFailure(event, e);
+                return;
             } catch (Exception e) {
-                log.warn("Failed to publish outbox event id={} topic={}; leaving unpublished for retry",
-                        event.id(), event.topic(), e);
-                ingestionDlqRepository.recordFailure(event.aggregateId(), event.payload(),
-                        "Kafka publish failed: " + e.getMessage(), Instant.now(clock));
+                recordFailure(event, e);
+                if (isPerRecordFailure(e)) {
+                    continue;
+                }
+                return;
             }
+            Instant now = Instant.now(clock);
+            outboxEventRepository.markPublished(event.id(), now);
+            ingestionDlqRepository.markResolved(event.aggregateId(), event.payload(), now);
+        }
+    }
+
+    private boolean isPerRecordFailure(Exception e) {
+        Throwable cause = (e instanceof ExecutionException && e.getCause() != null) ? e.getCause() : e;
+        return cause instanceof RecordTooLargeException
+                || cause instanceof InvalidTopicException
+                || cause instanceof SerializationException;
+    }
+
+    private void recordFailure(OutboxEvent event, Exception e) {
+        Instant now = Instant.now(clock);
+        String reason = "Kafka publish failed: " + e;
+        log.warn("Failed to publish outbox event id={} topic={}; leaving unpublished for retry",
+                event.id(), event.topic(), e);
+        Optional<UUID> existing = ingestionDlqRepository.findUnresolvedId(event.aggregateId(), event.payload());
+        if (existing.isPresent()) {
+            ingestionDlqRepository.incrementRetry(existing.get(), reason, now);
+        } else {
+            ingestionDlqRepository.insert(event.aggregateId(), event.payload(), reason, now);
         }
     }
 }

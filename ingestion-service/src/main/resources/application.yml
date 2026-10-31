@@ -20,6 +20,25 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      ack: all
+      retries: 3
+      compression-type: lz4
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        retry.backoff.ms: 1000
+        delivery.timeout.ms: 30000
+        max.block.ms: 5000
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+  task:
+    scheduling:
+      pool:
+        size: 4
+
 
 riskmesh:
   security:
@@ -30,6 +49,20 @@ riskmesh:
       per-merchant-limit: ${RATE_LIMIT_PER_MERCHANT:1000}
       global-limit: ${RATE_LIMIT_GLOBAL:50000}
       ip-violation-threshold: ${IP_VIOLATION_THRESHOLD:100}
+  kafka:
+    enabled: true
+    topics:
+      replication-factor: 1
+      min-insync-replicas: 1
+  gateway:
+    base-url: ${GATEWAY_BASE_URL:http://localhost:9099}
+    hold-path: /api/v1/holds
+    connect-timeout: 2s
+    read-timeout: 5s
+  saga:
+    stalled-threshold: 5m
+  outbox:
+    escalation-after: 1h
 
 
 server:

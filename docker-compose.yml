@@ -3,7 +3,7 @@ services:
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_DB: ingestion_db
-      POSTGRES_USER: riskmesh
+      POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5436:5432"
@@ -19,7 +19,7 @@ services:
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_DB: scoring_db
-      POSTGRES_USER: riskmesh
+      POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5433:5432"
@@ -34,7 +34,7 @@ services:
   postgres-casemanagement:
     image: pgvector/pgvector:pg16
     environment:
-      POSTGRES_DB: casemanagement_db
+      POSTGRES_DB: ${DB_USER}
       POSTGRES_USER: riskmesh
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
@@ -51,7 +51,7 @@ services:
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_DB: notification_db
-      POSTGRES_USER: riskmesh
+      POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5435:5432"
